@@ -114,6 +114,8 @@ with col2:
 
 
 # Definición de la función para generar la clave de encriptación
+# Definición de la función para generar la clave de encriptación
+# Definición de la función para generar la clave de encriptación
 def generate_key_from_password(password, salt):
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -125,12 +127,10 @@ def generate_key_from_password(password, salt):
     generated_key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
     return generated_key
 
-# Función para desencriptar el archivo .zip.enc
-def decrypt_file(encrypted_file_path, key):
+# Función para desencriptar los datos
+def decrypt_file(encrypted_data, key):
     fernet = Fernet(key)
     try:
-        with open(encrypted_file_path, 'rb') as encrypted_file:
-            encrypted_data = encrypted_file.read()
         decrypted_data = fernet.decrypt(encrypted_data)
         return decrypted_data
     except Exception as e:
@@ -148,40 +148,44 @@ archivos_base = {
     "VIDA OLA CALOR Exposición Base Daño -65": "VIDA OLA CALOR Exposición Base Daño -65.xlsx",
 }
 
-# Para evitar el error de 'archivos_base' sin inicializar, establecemos la clave al inicio del script
+# Inicializar el diccionario en el estado de la sesión si aún no existe
 if 'archivos_base' not in st.session_state:
     st.session_state['archivos_base'] = {}
 
 st.header("Cargar Archivos Base")
 
-# Text input fuera del botón para evitar reiniciar el valor
+# Input de contraseña
 password_input = st.text_input("Introduce la contraseña para desencriptar los archivos:", type="password")
 
-if st.button("Desencriptar y cargar archivos base"):
-    if password_input:
-        # Asumimos que la 'salt' está en la misma carpeta que el script
-        with open('salt', 'rb') as salt_file:
-            salt = salt_file.read()
+if st.button("Desencriptar y cargar archivos base") and password_input:
+    # Obtener la 'salt' de los secretos de Streamlit
+    salt = base64.b64decode(st.secrets["MY_SALT_SECRET_KEY"])
+    key = generate_key_from_password(password_input, salt)
 
-        key = generate_key_from_password(password_input, salt)
-        
-        encrypted_zip_path = os.path.join(os.path.dirname(__file__), 'inputs_base.zip.enc')
-        decrypted_zip = decrypt_file(encrypted_zip_path, key)
-        
-        if decrypted_zip:
-            with ZipFile(io.BytesIO(decrypted_zip), 'r') as zip_ref:
-                for descripcion, file_name in archivos_base.items():
-                    archivo_zip_ruta = f"Inputs Base/{file_name}"
-                    if archivo_zip_ruta in zip_ref.namelist():
-                        with zip_ref.open(archivo_zip_ruta) as file:
-                            content = io.BytesIO(file.read())
-                            df = pd.read_excel(content)
-                            st.session_state['archivos_base'][descripcion] = df
-                            st.success(f"{descripcion} cargado correctamente.")
-                    else:
-                        st.error(f"No se pudo encontrar {archivo_zip_ruta} en el archivo ZIP desencriptado.")
-        else:
-            st.error("La contraseña es incorrecta o el archivo no se pudo desencriptar.")
+    # Localizar el archivo encriptado en la misma carpeta del script
+    encrypted_zip_path = 'inputs_base.zip.enc'
+    
+    # Leer y desencriptar el contenido del archivo .zip.enc
+    with open(encrypted_zip_path, 'rb') as file:
+        encrypted_data = file.read()
+    decrypted_zip = decrypt_file(encrypted_data, key)
+    
+    if decrypted_zip:
+        with ZipFile(io.BytesIO(decrypted_zip), 'r') as zip_ref:
+            for descripcion, nombre_archivo in archivos_base.items():
+                archivo_zip_ruta = f"Inputs Base/{nombre_archivo}"
+                if archivo_zip_ruta in zip_ref.namelist():
+                    with zip_ref.open(archivo_zip_ruta) as file:
+                        content = io.BytesIO(file.read())
+                        df = pd.read_excel(content)
+                        st.session_state['archivos_base'][descripcion] = df
+                        st.success(f"{descripcion} cargado correctamente.")
+                else:
+                    st.error(f"No se pudo encontrar el archivo {nombre_archivo}")
+
+    else:
+        st.error("No se pudo desencriptar los archivos con esa contraseña.")
+
 
 ######################################## --- Sección para cargar los archivos de la compañía --- ############################3
 st.header('Carga de archivos de la compañía')
