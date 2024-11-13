@@ -84,30 +84,7 @@ def calcular_ajustes_y_proyecciones(df_exposicion_compania, df_exposicion_base_d
 
     return df_vida_ola_calor_ajustada
 
-# Crear columnas para el logo y el título
-col1, col2 = st.columns([1, 5])
-
-# Colocar el logo en la primera columna usando Streamlit
-with col1:
-    st.image('logo.png', width=120)  # Streamlit maneja la carga de la imagen
-
-# Inserta algo de espacio antes del título para bajarlo un poco más
-st.write("\n")
-
-# Colocar el título en la segunda columna con estilo y agregar padding-left con st.markdown
-with col2:
-    st.markdown("""
-        <style>
-        .title-style {
-            padding-left: 20px; /* Ajusta este valor para mover el título hacia la derecha */
-            margin-top: 120px;  
-        }
-        </style>
-        <div class="title-style">
-            <h1>KLIM TOOL</h1>
-        </div>
-        """, unsafe_allow_html=True)
-
+st.title("KLIM TOOL")
 ##################################### --- Sección para cargar los archivos base --- ###################################################
 
 
