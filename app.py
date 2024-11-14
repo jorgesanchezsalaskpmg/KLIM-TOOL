@@ -85,6 +85,8 @@ def calcular_ajustes_y_proyecciones(df_exposicion_compania, df_exposicion_base_d
     return df_vida_ola_calor_ajustada
 
 st.title("KLIM TOOL")
+
+st.image('logo.PNG', width=120)
 ##################################### --- Sección para cargar los archivos base --- ###################################################
 
 
